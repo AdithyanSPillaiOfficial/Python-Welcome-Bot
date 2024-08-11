@@ -2,6 +2,7 @@ import os
 import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
+import asyncio
 
 from keep_alive import keep_alive
 keep_alive()
@@ -77,4 +78,6 @@ async def main():
         await bot.start(bot_token)
 
 # If running in a Colab/Jupyter environment
-await main()
+# Use asyncio.run to execute the async function
+if __name__ == "__main__":
+    asyncio.run(main())
