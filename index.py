@@ -4,8 +4,8 @@ from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
 import asyncio
 
-from keep_alive import keep_alive
-keep_alive()
+#from keep_alive import keep_alive
+#keep_alive()
 
 # Enable intents
 intents = discord.Intents.default()
