@@ -1,6 +1,10 @@
+import os
 import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
+
+from keep_alive import keep_alive
+keep_alive()
 
 # Enable intents
 intents = discord.Intents.default()
