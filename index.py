@@ -1,11 +1,11 @@
-import os
 import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw, ImageFont
+import os
 import asyncio
+from dotenv import load_dotenv
 
-#from keep_alive import keep_alive
-#keep_alive()
+load_dotenv()
 
 # Enable intents
 intents = discord.Intents.default()
@@ -31,8 +31,8 @@ async def on_member_join(member):
 
     # Load fonts with larger sizes
     try:
-        font_large = ImageFont.truetype('arial.ttf', 50)  # Increased size for "Welcome" and "to GTA MALLU FAMILY"
-        font_extra_large = ImageFont.truetype('arial.ttf', 75)  # Increased size for the name
+        font_large = ImageFont.truetype('arial.ttf', 50)  # Size for "Welcome" and "to GTA MALLU FAMILY"
+        font_extra_large = ImageFont.truetype('arial.ttf', 75)  # Size for the name
     except IOError:
         # Fallback to a default font if Arial is not available
         font_large = ImageFont.load_default()
@@ -43,18 +43,27 @@ async def on_member_join(member):
     name_text = member.display_name
     family_text = "to GTA MALLU FAMILY"
 
-    # Calculate the width and height of the text to center it
-    welcome_width, welcome_height = draw.textsize(welcome_text, font=font_large)
-    name_width, name_height = draw.textsize(name_text, font=font_extra_large)
-    family_width, family_height = draw.textsize(family_text, font=font_large)
+    # Line spacing factor
+    line_spacing = 20  # Adjust this value to increase/decrease space between lines
+
+    # Calculate the bounding box for the text to center it
+    welcome_bbox = draw.textbbox((0, 0), welcome_text, font=font_large)
+    name_bbox = draw.textbbox((0, 0), name_text, font=font_extra_large)
+    family_bbox = draw.textbbox((0, 0), family_text, font=font_large)
 
     # Get image dimensions
     img_width, img_height = bg_image.size
 
-    # Calculate positions for centering
-    welcome_position = (((img_width - welcome_width) // 2)+80, (img_height - welcome_height - name_height - family_height) // 2)
-    name_position = (((img_width - name_width) // 2)+80, welcome_position[1] + welcome_height)
-    family_position = (((img_width - family_width) // 2)+80, name_position[1] + name_height)
+    # Calculate text dimensions
+    welcome_width, welcome_height = welcome_bbox[2] - welcome_bbox[0], welcome_bbox[3] - welcome_bbox[1]
+    name_width, name_height = name_bbox[2] - name_bbox[0], name_bbox[3] - name_bbox[1]
+    family_width, family_height = family_bbox[2] - family_bbox[0], family_bbox[3] - family_bbox[1]
+
+    # Calculate positions for centering with line spacing
+    total_text_height = welcome_height + line_spacing + name_height + line_spacing + family_height
+    welcome_position = (((img_width - welcome_width) // 2) + 80, (img_height - total_text_height) // 2)
+    name_position = (((img_width - name_width) // 2) + 80, welcome_position[1] + welcome_height + line_spacing)
+    family_position = (((img_width - family_width) // 2) + 80, name_position[1] + name_height + line_spacing)
 
     # Draw the text onto the image
     draw.text(welcome_position, welcome_text, font=font_large, fill=(255, 255, 255))
@@ -69,15 +78,13 @@ async def on_member_join(member):
         picture = discord.File(f)
         await channel.send(f'Welcome to the server, {member.mention}!', file=picture)
 
-
 # Running the bot
-bot_token = os.getenv('BOT_TOKEN')
-
 async def main():
-    async with bot:
-        await bot.start(bot_token)
+    from keep_alive import keep_alive
+    keep_alive()
+    bot_token = os.getenv('BOT_TOKEN')  # Ensure this environment variable is set
+    await bot.start(bot_token)
 
-# If running in a Colab/Jupyter environment
 # Use asyncio.run to execute the async function
 if __name__ == "__main__":
     asyncio.run(main())
