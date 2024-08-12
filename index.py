@@ -4,12 +4,17 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 import asyncio
 from dotenv import load_dotenv
+import datetime
+from collections import defaultdict
+
 
 load_dotenv()
 
 # Enable intents
 intents = discord.Intents.default()
 intents.members = True  # Make sure the bot can receive member-related events
+intents.message_content = True
+intents.guilds = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
@@ -77,6 +82,40 @@ async def on_member_join(member):
     with open('welcome.png', 'rb') as f:
         picture = discord.File(f)
         await channel.send(f'Welcome to the server, {member.mention}!', file=picture)
+
+
+#TIME OUT SPAMMING USERS
+# Track message timestamps
+message_times = defaultdict(list)
+SPAM_THRESHOLD = 5  # Number of messages in a short period considered as spam
+TIME_WINDOW = 10  # Time window in seconds to check for spam
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    user_id = message.author.id
+    now = discord.utils.utcnow()
+
+    # Update message timestamps
+    message_times[user_id].append(now)
+    message_times[user_id] = [timestamp for timestamp in message_times[user_id] if (now - timestamp).total_seconds() < TIME_WINDOW]
+
+    if len(message_times[user_id]) > SPAM_THRESHOLD:
+        # User is spamming
+        try:
+            #await message.author.timeout_for(minutes=10)
+            duration = datetime.timedelta(seconds=0, minutes=10, hours= 0, days=0)
+            await message.author.timeout(duration, reason="Spamming")
+            await message.channel.send(f"{message.author.mention}, you have been put in timeout for spamming.")
+        except discord.Forbidden:
+            await message.channel.send("I don't have permission to timeout users.")
+        except discord.HTTPException as e:
+            await message.channel.send(f"An error occurred: {e}")
+
+    await bot.process_commands(message)
+
 
 # Running the bot
 async def main():
